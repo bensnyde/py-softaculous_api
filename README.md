@@ -12,6 +12,6 @@ https://www.softaculous.com/docs/API
 Usage
 ---
 ```
-softaculous = Softaculous("whm.example.com", "root", "strongpassword", "some_cpanel_user")
+softaculous = Softaculous("cpanel.example.com", "cpanelacct01", "strongpassword")
 print softaculous.list_scripts()
 ```
