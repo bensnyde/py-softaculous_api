@@ -1,13 +1,14 @@
 """
 Python Library for Softaculous API
 
-	https://www.softaculous.com/docs/API
+https://www.softaculous.com/docs/API
 
 Author: Benton Snyder
 Website: http://bensnyde.me
 Created: 1/4/15
 
 """
+from phpserialize import *
 import logging
 import base64
 import httplib
@@ -15,227 +16,315 @@ import json
 import socket
 
 class Softaculous:
-	def __init__(self, softaculous_base_url, softaculous_username, softaculous_password):
-		"""Constructor
-		Paremeters
-			softaculous_base_url: str base url of softaculous (ex. whm.example.com)
-			softaculous_username: str softaculous username
-			softaculous_password: str softaculous password
-		Returns
-			None
-		"""
-		self.base_url = softaculous_base_url
-		self.username = softaculous_username
-		self.password = softaculous_password
+    def __init__(self, cp_base_url, cp_username, cp_password):
+        """Constructor
 
-	def __softaculous_api_query(self, **kwargs):
-		"""Query Softaculous API
+        Parameters
+            cp_base_url: str softaculous's control panel base url (ex. cpanel.example.com)
+            cp_username: str softaculous's control panel username
+            cp_password: str softaculous's control panel password
+        Returns
+            None
+        """
+        self.base_url = cp_base_url
+        self.username = cp_username
+        self.password = cp_password
 
-		Parameters
-			kwargs:
-		Returns:
-			json response from server
-		"""
+    def __softaculous_api_query(self, kwargs=None):
+        """Query Softaculous API
+
+        Parameters
+            kwargs:
+        Returns:
+            json response from server
+        """
         try:
-            conn = httplib.HTTPSConnection(self.base_url)
-            conn.request('GET', queryStr, headers={'Authorization':'Basic ' + base64.b64encode(self.whm_username+':'+self.whm_password).decode('ascii')})
+            query_string = "/frontend/x3/softaculous/index.live.php?&api=serialize"
+            http_verb = "GET"
+
+            if kwargs:
+                http_verb = "POST"
+                for key,val in kwargs.items():
+                    query_string += "&"+key+"="+val
+
+            print query_string
+
+            conn = httplib.HTTPSConnection(self.base_url, 2083)
+            conn.request(http_verb, query_string, headers={'Authorization':'Basic ' + base64.b64encode(self.username+':'+self.password).decode('ascii')})
             response = conn.getresponse()
-            data = json.loads(response.read())
+            data = loads(response.read())
             conn.close()
 
             return data
-        # Log errors
         except httplib.HTTPException as ex:
-            logging.critical("HTTPException from CpanelFTP API: %s" % ex)
+            logging.critical("HTTPException from Softaculous API: %s" % ex)
         except socket.error as ex:
-            logging.critical("Socket.error connecting to CpanelFTP API: %s" % ex)
+            logging.critical("Socket.error connecting to Softaculous API: %s" % ex)
         except ValueError as ex:
-            logging.critical("ValueError decoding CpanelFTP API response string: %s" % ex)
+            logging.critical("ValueError decoding Softaculous API response string: %s" % ex)
         except Exception as ex:
-            logging.critical("Unhandled Exception while querying CpanelFTP API: %s" % ex)
-		return True
+            logging.critical("Unhandled Exception while querying Softaculous API: %s" % ex)
+        return False
 
-	def list_scripts(self):
-		"""List Scripts
+    def list_scripts(self):
+        """List Scripts
 
-			https://www.softaculous.com/docs/API#List_Scripts
-		Parameters
-			None
-		Returns
-			json dictionary:
-				iscripts: [] of installed scripts
-		"""
-		data {
-			"act": None
-		}
+            https://www.softaculous.com/docs/API#List_Scripts
 
-		return self.__softaculous_api_query(data)
+        Parameters
+            None
+        Returns
+            JSON
+                time_taken: float
+                timenow: int epoch timestamp
+                title: str
+                top: dict
+                    int: float
+                iscripts: dict
+                    int(script_id): dict
+                        cat: str category
+                        desc: str description
+                        ins: int
+                        name: str human friendly name
+                        softname: str software friendly name
+                        type: str php|js|perl
+                        ver: str version
 
-	def install_script(self, script_id, **kwargs):
-		"""List Scripts
+        """
+        data = {
+            "act": None
+        }
 
-			https://www.softaculous.com/docs/API#List_Scripts
-		Parameters
-			None
-		Returns
-			json dictionary:
-				iscripts: [] of installed scripts
-		"""
-		data = {
-			"act": "software",
-			"soft": script_id,
-		}
+        return self.__softaculous_api_query(data)
 
-		return self.__softaculous_api_query(data)
+    def install_script(self, script_id, **kwargs):
+        """Install Script
 
-	def upgrade_script(self, installation_id):
-		"""List Scripts
+            https://www.softaculous.com/docs/API#Install_a_Script
 
-			https://www.softaculous.com/docs/API#List_Scripts
-		Parameters
-			None
-		Returns
-			json dictionary:
-				iscripts: [] of installed scripts
-		"""
-		data = {
-			"act": "upgrade",
-			"insid": installation_id,
-		}
+        Parameters
+            script_id: str script id
+            *kwargs:
+                softsubmit: int triggers the installation routine [1]
+                softdomain: str
+                softdirectory: str subdirectory to install script into (blank for root of domain)
+                softdb: str database name
+                dbusername: str database user
+                dbuserpass: str database user's password
+                hostname: str MySQL server hostname
+                admin_username: str admin account name
+                admin_pass: str admin account password
+                admin_email: str admin account email
+                language: str language [en|es|etc...]
+                site_name: str site name
+                site_desc: str site description
+        Returns
+            JSON
+                title: str
+                info: dict
+                    overview:
+                    demo:
+                    ratings:
+                    support:
+                    release_date:
+                    mod:
+                    mod_files:
+                    import:
+                settings:
+                    Site Settings: dict
+                        license_key:
+                            tag:
+                            head:
+                            exp:
+                            handle:
+                            optional:
+                        admin_fname:
+                            tag:
+                            head:
+                            exp:
+                            handle:
+                            optional:
+                        admin_lname:
+                            tag:
+                            head:
+                            exp:
+                            handle:
+                            optional:
+                dbtype:
+                __settings:
+                    adminurl:
+                installations: dict
+                notes:
+                cron:
+                datadir:
+                overwrite_option:
+                protocols:
+                    int: str
+                nopackage:
+                theme_package:
+                timenow:
+                time_taken
 
-		return self.__softaculous_api_query(data)
+        """
+        data = {
+            "act": "software",
+            "soft": script_id,
+        }
 
-	def remove_script(self, installation_id):
-		"""List Scripts
+        return self.__softaculous_api_query(data)
 
-			https://www.softaculous.com/docs/API#List_Scripts
-		Parameters
-			None
-		Returns
-			json dictionary:
-				iscripts: [] of installed scripts
-		"""
-		data = {
-			"act": "remove",
-			"insid": installation_id,
-		}
+    def upgrade_script(self, installation_id):
+        """Upgrade Script
 
-		return self.__softaculous_api_query(data)
+            https://www.softaculous.com/docs/API#Upgrade_an_Installed_Script
 
-	def import_installation(self, script_id):
-		"""List Scripts
+        Parameters
+            installation_id: str installation id
+        Returns
+            JSON
+        """
+        data = {
+            "act": "upgrade",
+            "insid": installation_id,
+        }
 
-			https://www.softaculous.com/docs/API#List_Scripts
-		Parameters
-			None
-		Returns
-			json dictionary:
-				iscripts: [] of installed scripts
-		"""
-		data = {
-			"act": "import",
-			"soft": script_id,
-		}
+        return self.__softaculous_api_query(data)
 
-		return self.__softaculous_api_query(data)
+    def remove_script(self, installation_id):
+        """Remove Script
 
-	def list_installed_scripts(self, show_only_installations_with_updates_available = False):
-		"""List Scripts
+            https://www.softaculous.com/docs/API#Remove_an_Installed_Script
 
-			https://www.softaculous.com/docs/API#List_Scripts
-		Parameters
-			None
-		Returns
-			json dictionary:
-				iscripts: [] of installed scripts
-		"""
-		data = {
-			"act": "installations",
-			"showupdates": show_only_installations_with_updates_available,
-		}
+        Parameters
+            installation_id: str installation id
+        Returns
+            JSON
+        """
+        data = {
+            "act": "remove",
+            "insid": installation_id,
+        }
 
-		return self.__softaculous_api_query(data)
+        return self.__softaculous_api_query(data)
 
-	def list_backups(self):
-		"""List Scripts
+    def import_installation(self, script_id):
+        """Import Installation
 
-			https://www.softaculous.com/docs/API#List_Scripts
-		Parameters
-			None
-		Returns
-			json dictionary:
-				iscripts: [] of installed scripts
-		"""
-		data = {
-			"act": "backups"
-		}
+            https://www.softaculous.com/docs/API#Import_an_Installation
 
-		return self.__softaculous_api_query(data)
+        Parameters
+            script_id: str script id
+        Returns
+            JSON
+        """
+        data = {
+            "act": "import",
+            "soft": script_id,
+        }
 
-	def backup_installed_script(self, installation_id):
-		"""List Scripts
+        return self.__softaculous_api_query(data)
 
-			https://www.softaculous.com/docs/API#List_Scripts
-		Parameters
-			None
-		Returns
-			json dictionary:
-				iscripts: [] of installed scripts
-		"""
-		data = {
-			"act": "backup",
-			"insid": installation_id,
-		}
+    def list_installed_scripts(self, show_only_installations_with_updates_available=False):
+        """List Installed Scripts
 
-		return self.__softaculous_api_query(data)
+            https://www.softaculous.com/docs/API#List_Installed_Script
 
-	def restore_installed_script(self, back_file_name):
-		"""List Scripts
+        Parameters
+            show_only_installations_with_updates_available: bool
+        Returns
+            JSON
+                time_taken:
+                timenow:
+                title:
+                installations: dict
+        """
+        data = {
+            "act": "installations",
+            "showupdates": ("false", "true")[show_only_installations_with_updates_available],
+        }
 
-			https://www.softaculous.com/docs/API#List_Scripts
-		Parameters
-			None
-		Returns
-			json dictionary:
-				iscripts: [] of installed scripts
-		"""
-		data = {
-			"act": "restore",
-			"restore": backup_filename
-		}
+        return self.__softaculous_api_query(data)
 
-		return self.__softaculous_api_query(data)
+    def list_backups(self):
+        """List Backups
 
-	def download_backups(self, backup_filename):
-		"""List Scripts
+            https://www.softaculous.com/docs/API#List_Backups
 
-			https://www.softaculous.com/docs/API#List_Scripts
-		Parameters
-			None
-		Returns
-			json dictionary:
-				iscripts: [] of installed scripts
-		"""
-		data = {
-			"act": "backups",
-			"download": backup_filename,
-		}
+        Parameters
+            None
+        Returns
+            JSON
+        """
+        data = {
+            "act": "backups"
+        }
 
-		return self.__softaculous_api_query(data)
+        return self.__softaculous_api_query(data)
 
-	def delete_backup(self, backup_filename):
-		"""List Scripts
+    def backup_installed_script(self, installation_id):
+        """Backup an Installed Script
 
-			https://www.softaculous.com/docs/API#List_Scripts
-		Parameters
-			None
-		Returns
-			json dictionary:
-				iscripts: [] of installed scripts
-		"""
-		data = {
-			"act": "backups",
-			"remove": backup_filename,
-		}
+            https://www.softaculous.com/docs/API#Backup_an_Installed_Script
 
-		return self.__softaculous_api_query(data)
+        Parameters
+            installation_id: str installation id
+        Returns
+            JSON
+        """
+        data = {
+            "act": "backup",
+            "insid": installation_id,
+        }
+
+        return self.__softaculous_api_query(data)
+
+    def restore_installed_script(self, back_file_name):
+        """Restore an Installed Script
+
+            https://www.softaculous.com/docs/API#Restore_an_Installed_Script
+
+        Parameters
+            None
+        Returns
+            JSON
+        """
+        data = {
+            "act": "restore",
+            "restore": backup_filename
+        }
+
+        return self.__softaculous_api_query(data)
+
+    def download_backups(self, backup_filename):
+        """Download Backups
+
+            https://www.softaculous.com/docs/API#Download_Backups
+
+        Parameters
+            backup_filename: str backup filename to download
+        Returns
+            JSON
+        """
+        data = {
+            "act": "backups",
+            "download": backup_filename,
+        }
+
+        return self.__softaculous_api_query(data)
+
+    def delete_backup(self, backup_filename):
+        """Delete Backup
+
+            https://www.softaculous.com/docs/API#Delete_Backups
+
+        Parameters
+            backup_filename: str backup filename to delete
+        Returns
+            JSON
+        """
+        data = {
+            "act": "backups",
+            "remove": backup_filename,
+        }
+
+        return self.__softaculous_api_query(data)
