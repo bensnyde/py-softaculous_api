@@ -1,7 +1,7 @@
 py-softaculous-api
 =================
 
-**Python Library for Softaculous**
+**Python 3 Library for Softaculous**
 
 https://www.softaculous.com/docs/API
 
