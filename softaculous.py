@@ -4,7 +4,7 @@ Python Library for Softaculous API
 https://www.softaculous.com/docs/API
 
 Author: Benton Snyder
-Website: http://bensnyde.me
+Website: https://bensnyde.me
 Created: 1/4/15
 
 """
@@ -14,6 +14,7 @@ import base64
 import httplib
 import json
 import socket
+
 
 class Softaculous:
     def __init__(self, cp_base_url, cp_username, cp_password):
@@ -39,20 +40,22 @@ class Softaculous:
             json response from server
         """
         try:
-            query_string = "/frontend/x3/softaculous/index.live.php?&api=serialize"
+            auth_str = base64.b64encode(f"{self.username}:{self.password}").decode('ascii')
+            query_str = "/frontend/x3/softaculous/index.live.php?&api=serialize"
             http_verb = "GET"
 
             if kwargs:
                 http_verb = "POST"
                 for key,val in kwargs.items():
-                    query_string += "&"+key+"="+val
-
-            print query_string
+                    query_str += "&"+key+"="+val
 
             conn = httplib.HTTPSConnection(self.base_url, 2083)
-            conn.request(http_verb, query_string, headers={'Authorization':'Basic ' + base64.b64encode(self.username+':'+self.password).decode('ascii')})
+            conn.request(http_verb, query_str, headers={
+                'Authorization': f'Basic {auth_str}'
+            })
+
             response = conn.getresponse()
-            data = loads(response.read())
+            data = json.loads(response.read())
             conn.close()
 
             return data
@@ -91,11 +94,9 @@ class Softaculous:
                         ver: str version
 
         """
-        data = {
+        return self.__softaculous_api_query({
             "act": None
-        }
-
-        return self.__softaculous_api_query(data)
+        })
 
     def install_script(self, script_id, **kwargs):
         """Install Script
@@ -166,12 +167,10 @@ class Softaculous:
                 time_taken
 
         """
-        data = {
+        return self.__softaculous_api_query({
             "act": "software",
             "soft": script_id,
-        }
-
-        return self.__softaculous_api_query(data)
+        })
 
     def upgrade_script(self, installation_id):
         """Upgrade Script
@@ -183,12 +182,10 @@ class Softaculous:
         Returns
             JSON
         """
-        data = {
+        return self.__softaculous_api_query({
             "act": "upgrade",
             "insid": installation_id,
-        }
-
-        return self.__softaculous_api_query(data)
+        })
 
     def remove_script(self, installation_id):
         """Remove Script
@@ -200,12 +197,10 @@ class Softaculous:
         Returns
             JSON
         """
-        data = {
+        return self.__softaculous_api_query({
             "act": "remove",
             "insid": installation_id,
-        }
-
-        return self.__softaculous_api_query(data)
+        })
 
     def import_installation(self, script_id):
         """Import Installation
@@ -217,12 +212,10 @@ class Softaculous:
         Returns
             JSON
         """
-        data = {
+        return self.__softaculous_api_query({
             "act": "import",
             "soft": script_id,
-        }
-
-        return self.__softaculous_api_query(data)
+        })
 
     def list_installed_scripts(self, show_only_installations_with_updates_available=False):
         """List Installed Scripts
@@ -238,12 +231,10 @@ class Softaculous:
                 title:
                 installations: dict
         """
-        data = {
+        return self.__softaculous_api_query({
             "act": "installations",
             "showupdates": ("false", "true")[show_only_installations_with_updates_available],
-        }
-
-        return self.__softaculous_api_query(data)
+        })
 
     def list_backups(self):
         """List Backups
@@ -255,11 +246,9 @@ class Softaculous:
         Returns
             JSON
         """
-        data = {
+        return self.__softaculous_api_query({
             "act": "backups"
-        }
-
-        return self.__softaculous_api_query(data)
+        })
 
     def backup_installed_script(self, installation_id):
         """Backup an Installed Script
@@ -271,12 +260,10 @@ class Softaculous:
         Returns
             JSON
         """
-        data = {
+        return self.__softaculous_api_query({
             "act": "backup",
             "insid": installation_id,
-        }
-
-        return self.__softaculous_api_query(data)
+        })
 
     def restore_installed_script(self, back_file_name):
         """Restore an Installed Script
@@ -288,12 +275,10 @@ class Softaculous:
         Returns
             JSON
         """
-        data = {
+        return self.__softaculous_api_query({
             "act": "restore",
             "restore": backup_filename
-        }
-
-        return self.__softaculous_api_query(data)
+        })
 
     def download_backups(self, backup_filename):
         """Download Backups
@@ -305,12 +290,10 @@ class Softaculous:
         Returns
             JSON
         """
-        data = {
+        return self.__softaculous_api_query({
             "act": "backups",
             "download": backup_filename,
-        }
-
-        return self.__softaculous_api_query(data)
+        })
 
     def delete_backup(self, backup_filename):
         """Delete Backup
@@ -322,9 +305,7 @@ class Softaculous:
         Returns
             JSON
         """
-        data = {
+        return self.__softaculous_api_query({
             "act": "backups",
             "remove": backup_filename,
-        }
-
-        return self.__softaculous_api_query(data)
+        })
