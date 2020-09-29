@@ -12,7 +12,6 @@ from phpserialize import *
 import logging
 import base64
 import httplib
-import json
 import socket
 
 
@@ -55,7 +54,7 @@ class Softaculous:
             })
 
             response = conn.getresponse()
-            data = json.loads(response.read())
+            data = loads(response.read())
             conn.close()
 
             return data
