@@ -40,7 +40,7 @@ class Softaculous:
             json response from server
         """
         try:
-            auth_str = base64.b64encode(f"{self.username}:{self.password}").decode('ascii')
+            auth_str = base64.b64encode(f"{self.username}:{self.password}".encode()).decode('ascii')
             query_str = "/frontend/x3/softaculous/index.live.php?&api=serialize"
             http_verb = "GET"
 
@@ -59,14 +59,9 @@ class Softaculous:
             conn.close()
 
             return data
-        except httplib.HTTPException as ex:
-            logging.critical("HTTPException from Softaculous API: %s" % ex)
-        except socket.error as ex:
-            logging.critical("Socket.error connecting to Softaculous API: %s" % ex)
-        except ValueError as ex:
-            logging.critical("ValueError decoding Softaculous API response string: %s" % ex)
-        except Exception as ex:
-            logging.critical("Unhandled Exception while querying Softaculous API: %s" % ex)
+        except:
+            logging.exception(f"Error {http_verb} to {query_str}") 
+            
         return False
 
     def list_scripts(self):
