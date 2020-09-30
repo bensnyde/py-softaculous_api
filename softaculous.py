@@ -27,8 +27,7 @@ class Softaculous:
             None
         """
         self.base_url = cp_base_url
-        self.username = cp_username
-        self.password = cp_password
+        self.auth_str = base64.b64encode(f"{cp_username}:{cp_password}".encode()).decode('ascii')
 
     def __softaculous_api_query(self, kwargs=None):
         """Query Softaculous API
@@ -39,7 +38,6 @@ class Softaculous:
             json response from server
         """
         try:
-            auth_str = base64.b64encode(f"{self.username}:{self.password}".encode()).decode('ascii')
             query_str = "/frontend/x3/softaculous/index.live.php?&api=serialize"
             http_verb = "GET"
 
@@ -50,7 +48,7 @@ class Softaculous:
 
             conn = http.client.HTTPSConnection(self.base_url, 2083)
             conn.request(http_verb, query_str, headers={
-                'Authorization': f'Basic {auth_str}'
+                'Authorization': f'Basic {self.auth_str}'
             })
 
             response = conn.getresponse()
