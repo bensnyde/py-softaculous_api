@@ -11,7 +11,7 @@ Created: 1/4/15
 from phpserialize import *
 import logging
 import base64
-import httplib
+import http.client
 import socket
 
 
@@ -48,7 +48,7 @@ class Softaculous:
                 for key,val in kwargs.items():
                     query_str += "&"+key+"="+val
 
-            conn = httplib.HTTPSConnection(self.base_url, 2083)
+            conn = http.client.HTTPSConnection(self.base_url, 2083)
             conn.request(http_verb, query_str, headers={
                 'Authorization': f'Basic {auth_str}'
             })
@@ -259,7 +259,7 @@ class Softaculous:
             "insid": installation_id,
         })
 
-    def restore_installed_script(self, back_file_name):
+    def restore_installed_script(self, backup_filename):
         """Restore an Installed Script
 
             https://www.softaculous.com/docs/API#Restore_an_Installed_Script
