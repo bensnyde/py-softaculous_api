@@ -1,4 +1,5 @@
 """
+
 Python Library for Softaculous API
 
 https://www.softaculous.com/docs/API
@@ -8,6 +9,7 @@ Website: https://bensnyde.me
 Created: 1/4/15
 
 """
+
 from phpserialize import *
 import logging
 import base64
@@ -44,7 +46,7 @@ class Softaculous:
             if kwargs:
                 http_verb = "POST"
                 for key,val in kwargs.items():
-                    query_str += "&"+key+"="+val
+                    query_str += f"&{key}={val}"
 
             conn = http.client.HTTPSConnection(self.base_url, 2083)
             conn.request(http_verb, query_str, headers={
@@ -52,12 +54,17 @@ class Softaculous:
             })
 
             response = conn.getresponse()
-            data = loads(response.read())
+            
+            if 'act' in kwargs and kwargs['act']=='backup':
+                data = response.read()          
+            else:
+                data = loads(response.read())   
+                
             conn.close()
 
             return data
         except:
-            logging.exception(f"Error {http_verb} to {query_str}") 
+            logging.exception(f"Error {http_verb}ing to {query_str}") 
             
         return False
 
